@@ -136,20 +136,38 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-          pattern: '*'
-          merge-multiple: true
+          
+      - name: Prepare Release Assets
+        run: |
+          # Create a clean release directory
+          mkdir release_assets
+          
+          # Windows: Move EXE and PCK
+          mv artifacts/windows/*.exe release_assets/$EXPORT_NAME.exe
+          mv artifacts/windows/*.pck release_assets/$EXPORT_NAME.pck || true
+          
+          # Linux: Move binary
+          mv artifacts/linux/*.x86_64 release_assets/$EXPORT_NAME.x86_64
+          
+          # Mac: Move ZIP
+          mv artifacts/mac/*.zip release_assets/$EXPORT_NAME-mac.zip
+          
+          # Web: Create ZIP
+          cd artifacts/web
+          zip -r ../release_assets/$EXPORT_NAME-web.zip .
+          cd ../..
+          
+      - name: List Files for Verification
+        run: ls -lh release_assets
           
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "build-${{ github.run_id }}"  # Unique tag for each build
+          tag_name: "nightly-${{ github.run_id }}"
           name: "Nightly Build (${{ github.sha }})"
           body: "Automated build for commit ${{ github.sha }}"
           prerelease: true
           files: |
-            artifacts/windows/*
-            artifacts/linux/*
-            artifacts/mac/*
-            artifacts/web/*
+            release_assets/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
