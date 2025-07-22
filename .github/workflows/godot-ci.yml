@@ -136,23 +136,69 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-          
+        
       - name: Prepare Release Assets
         run: |
-          mkdir release_assets
-          mv artifacts/windows/*.exe release_assets/$EXPORT_NAME.exe
-          mv artifacts/windows/*.pck release_assets/$EXPORT_NAME.pck || true
-          mv artifacts/linux/*.x86_64 release_assets/$EXPORT_NAME.x86_64
-          mv artifacts/mac/*.zip release_assets/$EXPORT_NAME-mac.zip
-          zip -r release_assets/$EXPORT_NAME-web.zip artifacts/web
+          mkdir -p release_assets
+          
+          # Windows
+          if compgen -G "artifacts/windows/*.exe" > /dev/null; then
+            mv artifacts/windows/*.exe release_assets/$EXPORT_NAME.exe
+          fi
+          if compgen -G "artifacts/windows/*.pck" > /dev/null; then
+            mv artifacts/windows/*.pck release_assets/$EXPORT_NAME.pck
+          fi
+          
+          # Linux
+          if compgen -G "artifacts/linux/*.x86_64" > /dev/null; then
+            mv artifacts/linux/*.x86_64 release_assets/$EXPORT_NAME.x86_64
+          fi
+          
+          # Mac
+          if compgen -G "artifacts/mac/*.zip" > /dev/null; then
+            mv artifacts/mac/*.zip release_assets/$EXPORT_NAME-mac.zip
+          fi
+          
+          # Web
+          if [ -d "artifacts/web" ]; then
+            (cd artifacts/web && zip -r ../../release_assets/$EXPORT_NAME-web.zip .)
+          fi
           
       - name: Get Job Statuses
         id: job-status
         run: |
-          echo "windows_status=$(if [ -f artifacts/windows/*.exe ]; then echo "✅ Success"; else echo "❌ Failed"; fi)" >> $GITHUB_OUTPUT
-          echo "linux_status=$(if [ -f artifacts/linux/*.x86_64 ]; then echo "✅ Success"; else echo "❌ Failed"; fi)" >> $GITHUB_OUTPUT
-          echo "mac_status=$(if [ -f artifacts/mac/*.zip ]; then echo "✅ Success"; else echo "❌ Failed"; fi)" >> $GITHUB_OUTPUT
-          echo "web_status=$(if [ -f artifacts/web/index.html ]; then echo "✅ Success"; else echo "❌ Failed"; fi)" >> $GITHUB_OUTPUT
+          # Check Windows
+          if compgen -G "artifacts/windows/*.exe" > /dev/null; then
+            windows_status="✅ Success"
+          else
+            windows_status="❌ Failed"
+          fi
+          
+          # Check Linux
+          if compgen -G "artifacts/linux/*.x86_64" > /dev/null; then
+            linux_status="✅ Success"
+          else
+            linux_status="❌ Failed"
+          fi
+          
+          # Check Mac
+          if compgen -G "artifacts/mac/*.zip" > /dev/null; then
+            mac_status="✅ Success"
+          else
+            mac_status="❌ Failed"
+          fi
+          
+          # Check Web
+          if [ -f "artifacts/web/index.html" ]; then
+            web_status="✅ Success"
+          else
+            web_status="❌ Failed"
+          fi
+          
+          echo "windows_status=$windows_status" >> $GITHUB_OUTPUT
+          echo "linux_status=$linux_status" >> $GITHUB_OUTPUT
+          echo "mac_status=$mac_status" >> $GITHUB_OUTPUT
+          echo "web_status=$web_status" >> $GITHUB_OUTPUT
           
       - name: Create Release
         uses: softprops/action-gh-release@v1
