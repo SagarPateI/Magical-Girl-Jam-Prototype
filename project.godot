@@ -11,12 +11,16 @@ config_version=5
 [application]
 
 config/name="Magical-Girl-Jam-Prototype"
-config/features=PackedStringArray("4.4", "GL Compatibility")
+config/features=PackedStringArray("4.4", "C#", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [dotnet]
 
 project/assembly_name="Magical-Girl-Jam-Prototype"
+
+[editor]
+
+script/search_in_file_extensions=PackedStringArray("cs", "gd", "gdshader")
 
 [rendering]
 
