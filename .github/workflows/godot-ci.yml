@@ -137,52 +137,26 @@ jobs:
         with:
           path: artifacts
         
-      - name: Prepare Release Assets
-        run: |
-          mkdir -p release_assets
-          
-          # Windows
-          if compgen -G "artifacts/windows/*.exe" > /dev/null; then
-            mv artifacts/windows/*.exe release_assets/$EXPORT_NAME.exe
-          fi
-          if compgen -G "artifacts/windows/*.pck" > /dev/null; then
-            mv artifacts/windows/*.pck release_assets/$EXPORT_NAME.pck
-          fi
-          
-          # Linux
-          if compgen -G "artifacts/linux/*.x86_64" > /dev/null; then
-            mv artifacts/linux/*.x86_64 release_assets/$EXPORT_NAME.x86_64
-          fi
-          
-          # Mac
-          if compgen -G "artifacts/mac/*.zip" > /dev/null; then
-            mv artifacts/mac/*.zip release_assets/$EXPORT_NAME-mac.zip
-          fi
-          
-          # Web
-          if [ -d "artifacts/web" ]; then
-            (cd artifacts/web && zip -r ../../release_assets/$EXPORT_NAME-web.zip .)
-          fi
-          
+      # Check job statuses BEFORE moving files
       - name: Get Job Statuses
         id: job-status
         run: |
           # Check Windows
-          if compgen -G "artifacts/windows/*.exe" > /dev/null; then
+          if [ -f "artifacts/windows/$EXPORT_NAME.exe" ]; then
             windows_status="✅ Success"
           else
             windows_status="❌ Failed"
           fi
           
           # Check Linux
-          if compgen -G "artifacts/linux/*.x86_64" > /dev/null; then
+          if [ -f "artifacts/linux/$EXPORT_NAME.x86_64" ]; then
             linux_status="✅ Success"
           else
             linux_status="❌ Failed"
           fi
           
           # Check Mac
-          if compgen -G "artifacts/mac/*.zip" > /dev/null; then
+          if [ -f "artifacts/mac/$EXPORT_NAME.zip" ]; then
             mac_status="✅ Success"
           else
             mac_status="❌ Failed"
@@ -199,6 +173,33 @@ jobs:
           echo "linux_status=$linux_status" >> $GITHUB_OUTPUT
           echo "mac_status=$mac_status" >> $GITHUB_OUTPUT
           echo "web_status=$web_status" >> $GITHUB_OUTPUT
+          
+      - name: Prepare Release Assets
+        run: |
+          mkdir -p release_assets
+          
+          # Windows
+          if [ -f "artifacts/windows/$EXPORT_NAME.exe" ]; then
+            mv "artifacts/windows/$EXPORT_NAME.exe" "release_assets/$EXPORT_NAME.exe"
+          fi
+          if [ -f "artifacts/windows/$EXPORT_NAME.pck" ]; then
+            mv "artifacts/windows/$EXPORT_NAME.pck" "release_assets/$EXPORT_NAME.pck"
+          fi
+          
+          # Linux
+          if [ -f "artifacts/linux/$EXPORT_NAME.x86_64" ]; then
+            mv "artifacts/linux/$EXPORT_NAME.x86_64" "release_assets/$EXPORT_NAME.x86_64"
+          fi
+          
+          # Mac
+          if [ -f "artifacts/mac/$EXPORT_NAME.zip" ]; then
+            mv "artifacts/mac/$EXPORT_NAME.zip" "release_assets/$EXPORT_NAME-mac.zip"
+          fi
+          
+          # Web
+          if [ -d "artifacts/web" ]; then
+            (cd artifacts/web && zip -r ../../release_assets/$EXPORT_NAME-web.zip .)
+          fi
           
       - name: Create Release
         uses: softprops/action-gh-release@v1
