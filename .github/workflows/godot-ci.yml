@@ -144,9 +144,7 @@ jobs:
           mv artifacts/windows/*.pck release_assets/$EXPORT_NAME.pck || true
           mv artifacts/linux/*.x86_64 release_assets/$EXPORT_NAME.x86_64
           mv artifacts/mac/*.zip release_assets/$EXPORT_NAME-mac.zip
-          cd artifacts/web
-          zip -r ../release_assets/$EXPORT_NAME-web.zip .
-          cd ../..
+          zip -r release_assets/$EXPORT_NAME-web.zip artifacts/web
           
       - name: Get Job Statuses
         id: job-status
