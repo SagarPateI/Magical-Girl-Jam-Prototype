@@ -324,6 +324,9 @@ platform/windows/godot_res.res
 /.vs
 /.vscode
 
+# Idea workspace folder
+/.idea
+
 # Scons progress indicator
 .scons_node_count
 
