@@ -239,9 +239,12 @@ jobs:
           # Extract repository owner and name
           REPO_OWNER=$(echo "${{ github.repository }}" | cut -d'/' -f1)
           REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
-          
+
+          # Convert to lowercase
+          REPO_OWNER_LOWER=$(echo "$REPO_OWNER" | tr '[:upper:]' '[:lower:]')
+
           # Generate GitHub Pages URL
-          GH_PAGES_URL="https://${REPO_OWNER}.github.io/${REPO_NAME}/"
+          GH_PAGES_URL="https://${REPO_OWNER_LOWER}.github.io/${REPO_NAME}/"
           echo "gh_pages_url=${GH_PAGES_URL}" >> $GITHUB_OUTPUT
 
       - name: Create Release
@@ -251,9 +254,9 @@ jobs:
           name: "Nightly Build (${{ github.sha }})"
           body: |
             ### Automated build for commit [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
-            
+
             **WebGL Build**: Play directly in your browser at [${{ steps.gh-pages-url.outputs.gh_pages_url }}](${{ steps.gh-pages-url.outputs.gh_pages_url }})
-            
+
             ### Build Status & Downloads
             | Platform | Status | Download |
             |----------|--------|----------|
