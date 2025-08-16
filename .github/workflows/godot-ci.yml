@@ -13,7 +13,7 @@ env:
 jobs:
   export-windows:
     name: Windows Export
-    runs-on: ubuntu-22.04 # Use 22.04 with godot 4
+    runs-on: ubuntu-22.04
     container:
       image: barichello/godot-ci:4.4.1
     steps:
@@ -33,11 +33,15 @@ jobs:
           EXPORT_DIR="$(readlink -f build)"
           cd $PROJECT_PATH
           godot --headless --verbose --export-release "Windows Desktop" "$EXPORT_DIR/windows/$EXPORT_NAME.exe"
+      - name: Package Windows Build
+        run: |
+          cd build/windows
+          zip -r "$EXPORT_NAME-windows.zip" ./*
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows
-          path: build/windows
+          path: build/windows/$EXPORT_NAME-windows.zip
 
   export-linux:
     name: Linux Export
@@ -136,17 +140,16 @@ jobs:
         with:
           path: artifacts
 
-      # Check job statuses BEFORE moving files
       - name: Get Job Statuses
         id: job-status
         run: |
-          # Check Windows
-          if [ -f "artifacts/windows/$EXPORT_NAME.exe" ]; then
+          # Windows check (now looks for zip)
+          if [ -f "artifacts/windows" ]; then
             windows_status="✅ Success"
           else
             windows_status="❌ Failed"
           fi
-
+          
           # Check Linux
           if [ -f "artifacts/linux/$EXPORT_NAME.x86_64" ]; then
             linux_status="✅ Success"
@@ -178,11 +181,8 @@ jobs:
           mkdir -p release_assets
 
           # Windows
-          if [ -f "artifacts/windows/$EXPORT_NAME.exe" ]; then
-            mv "artifacts/windows/$EXPORT_NAME.exe" "release_assets/$EXPORT_NAME.exe"
-          fi
-          if [ -f "artifacts/windows/$EXPORT_NAME.pck" ]; then
-            mv "artifacts/windows/$EXPORT_NAME.pck" "release_assets/$EXPORT_NAME.pck"
+          if [ -f "artifacts/windows/$EXPORT_NAME.zip" ]; then
+            mv "artifacts/windows/$EXPORT_NAME.zip" "release_assets/$EXPORT_NAME-windows.zip"
           fi
 
           # Linux
@@ -211,8 +211,8 @@ jobs:
           mac_link=""
           web_link=""
 
-          if [ -f "release_assets/$EXPORT_NAME.exe" ]; then
-            windows_link="https://github.com/$repo/releases/download/$tag/$EXPORT_NAME.exe"
+          if [ -f "release_assets/$EXPORT_NAME-windows.zip" ]; then
+            windows_link="https://github.com/$repo/releases/download/$tag/$EXPORT_NAME-windows.zip"
           fi
 
           if [ -f "release_assets/$EXPORT_NAME.x86_64" ]; then
