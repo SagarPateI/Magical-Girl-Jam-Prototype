@@ -37,11 +37,14 @@ jobs:
         run: |
           cd build/windows
           zip -r "$EXPORT_NAME-windows.zip" ./*
+      # Debugging step to verify files
+      - name: List build directory
+        run: ls -lh build/windows
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows
-          path: build/windows/$EXPORT_NAME-windows.zip
+          path: build/windows/${{ env.EXPORT_NAME }}-windows.zip
 
   export-linux:
     name: Linux Export
@@ -139,12 +142,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-
+      # Windows check now looks for zip
       - name: Get Job Statuses
         id: job-status
         run: |
-          # Windows check (now looks for zip)
-          if [ -f "artifacts/windows" ]; then
+          # Windows
+          if [ -f "artifacts/windows/${{ env.EXPORT_NAME }}-windows.zip" ]; then
             windows_status="✅ Success"
           else
             windows_status="❌ Failed"
@@ -181,8 +184,8 @@ jobs:
           mkdir -p release_assets
 
           # Windows
-          if [ -f "artifacts/windows/$EXPORT_NAME.zip" ]; then
-            mv "artifacts/windows/$EXPORT_NAME.zip" "release_assets/$EXPORT_NAME-windows.zip"
+          if [ -f "artifacts/windows/${{ env.EXPORT_NAME }}-windows.zip" ]; then
+            mv "artifacts/windows/${{ env.EXPORT_NAME }}-windows.zip" "release_assets/${{ env.EXPORT_NAME }}-windows.zip"
           fi
 
           # Linux
@@ -211,8 +214,8 @@ jobs:
           mac_link=""
           web_link=""
 
-          if [ -f "release_assets/$EXPORT_NAME-windows.zip" ]; then
-            windows_link="https://github.com/$repo/releases/download/$tag/$EXPORT_NAME-windows.zip"
+          if [ -f "release_assets/${{ env.EXPORT_NAME }}-windows.zip" ]; then
+            windows_link="https://github.com/$repo/releases/download/$tag/${{ env.EXPORT_NAME }}-windows.zip"
           fi
 
           if [ -f "release_assets/$EXPORT_NAME.x86_64" ]; then
