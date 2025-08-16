@@ -9,11 +9,25 @@ env:
   GODOT_VERSION: 4.4.1
   EXPORT_NAME: magical-girl-test-project
   PROJECT_PATH: "."
+  DOTNET_VERSION: "8.0.x"
 
 jobs:
+  setup-dotnet:
+    name: Setup .NET
+    runs-on: ubuntu-22.04
+    outputs:
+      dotnet-version: ${{ steps.setup-dotnet.outputs.dotnet-version }}
+    steps:
+      - name: Setup .NET
+        id: setup-dotnet
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
   export-windows:
     name: Windows Export
     runs-on: ubuntu-22.04
+    needs: [setup-dotnet]
     container:
       image: barichello/godot-ci:4.4.1
     steps:
@@ -27,6 +41,10 @@ jobs:
           mkdir -v -p ~/.config/
           mv /root/.config/godot ~/.config/godot
           mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+      - name: Restore .NET dependencies
+        run: dotnet restore $PROJECT_PATH/mggj.csproj
+      - name: Build .NET project
+        run: dotnet build $PROJECT_PATH/mggj.csproj -c Release
       - name: Windows Build
         run: |
           mkdir -v -p build/windows
@@ -48,7 +66,8 @@ jobs:
 
   export-linux:
     name: Linux Export
-    runs-on: ubuntu-22.04 # Use 22.04 with godot 4
+    runs-on: ubuntu-22.04
+    needs: [setup-dotnet]
     container:
       image: barichello/godot-ci:4.4.1
     steps:
@@ -60,12 +79,20 @@ jobs:
         run: |
           mkdir -v -p ~/.local/share/godot/export_templates/
           mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+
+      - name: Restore .NET dependencies
+        run: dotnet restore $PROJECT_PATH/mggj.csproj
+
+      - name: Build .NET project
+        run: dotnet build $PROJECT_PATH/mggj.csproj -c Release
+
       - name: Linux Build
         run: |
           mkdir -v -p build/linux
           EXPORT_DIR="$(readlink -f build)"
           cd $PROJECT_PATH
           godot --headless --verbose --export-release "Linux/X11" "$EXPORT_DIR/linux/$EXPORT_NAME.x86_64"
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -75,6 +102,7 @@ jobs:
   export-web:
     name: Web Export
     runs-on: ubuntu-22.04
+    needs: [setup-dotnet]
     container:
       image: barichello/godot-ci:4.4.1
     steps:
@@ -86,29 +114,40 @@ jobs:
         run: |
           mkdir -v -p ~/.local/share/godot/export_templates/
           mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+
+      - name: Restore .NET dependencies
+        run: dotnet restore $PROJECT_PATH/mggj.csproj
+
+      - name: Build .NET project
+        run: dotnet build $PROJECT_PATH/mggj.csproj -c Release
+
       - name: Web Build
         run: |
           mkdir -v -p build/web
           EXPORT_DIR="$(readlink -f build)"
           cd $PROJECT_PATH
           godot --headless --verbose --export-release "Web" "$EXPORT_DIR/web/index.html"
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: web
           path: build/web
-      - name: Install rsync 📚
+
+      - name: Install rsync
         run: |
           apt-get update && apt-get install -y rsync
-      - name: Deploy to GitHub Pages 🚀
+
+      - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@releases/v4
         with:
-          branch: gh-pages # The branch the action should deploy to.
-          folder: build/web # The folder the action should deploy.
+          branch: gh-pages
+          folder: build/web
 
   export-mac:
     name: Mac Export
-    runs-on: ubuntu-22.04 # Use 22.04 with godot 4
+    runs-on: ubuntu-22.04
+    needs: [setup-dotnet]
     container:
       image: barichello/godot-ci:4.4.1
     steps:
@@ -120,12 +159,20 @@ jobs:
         run: |
           mkdir -v -p ~/.local/share/godot/export_templates/
           mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+
+      - name: Restore .NET dependencies
+        run: dotnet restore $PROJECT_PATH/mggj.csproj
+
+      - name: Build .NET project
+        run: dotnet build $PROJECT_PATH/mggj.csproj -c Release
+
       - name: Mac Build
         run: |
           mkdir -v -p build/mac
           EXPORT_DIR="$(readlink -f build)"
           cd $PROJECT_PATH
           godot --headless --verbose --export-release "macOS" "$EXPORT_DIR/mac/$EXPORT_NAME.zip"
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -152,7 +199,7 @@ jobs:
           else
             windows_status="❌ Failed"
           fi
-          
+
           # Check Linux
           if [ -f "artifacts/linux/$EXPORT_NAME.x86_64" ]; then
             linux_status="✅ Success"
