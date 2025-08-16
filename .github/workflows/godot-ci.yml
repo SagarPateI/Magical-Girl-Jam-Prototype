@@ -9,7 +9,6 @@ env:
   GODOT_VERSION: 4.4.1
   EXPORT_NAME: magical-girl-test-project
   PROJECT_PATH: "."
-  DOTNET_VERSION: "8.0.x"
 
 jobs:
   export-windows:
